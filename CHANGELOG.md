@@ -1,0 +1,86 @@
+# Changelog
+
+## 0.4.0
+- Added `cordon/fusion.py` — pluggable fusion strategies (naive average,
+  max, noisy-or, confidence cascade) instead of one hardcoded formula.
+- `cordon-evaluate` now compares all strategies side by side, and reports
+  both AUC and recall-at-threshold — the two can disagree (a strategy
+  can rank correctly while never crossing a real decision threshold),
+  and only the threshold table catches that.
+- `research/trace-experiment/` added: real generated traces, not
+  target-AUC synthetic data, run through cordon's actual detection code.
+  This is what surfaced that naive averaging can look fine on AUC while
+  having zero real recall, and that confidence-threshold cascading fails
+  silently on a rule-based veto's 0/1 output.
+- `routing.py` and `fusion.py` deduplicated — `confidence_cascade` in
+  `fusion.py` is now the single implementation both use.
+
+## 0.3.0
+- Added `cordon/evaluate.py` and the `cordon-evaluate` CLI — evaluating
+  routing/fusion choices against labeled data became a real feature of
+  the library, not a separate research script.
+- Folded the standalone `cascade-validation` project into this repo as
+  `research/cascade-validation/`, since it's evidence for one design
+  choice in this library, not a separate product.
+
+## 0.2.0
+- Added `cordon/routing.py` — confidence-threshold routing
+  (`confidence_route`, `batch_cascade_scores`) for continuous structural
+  scores, as opposed to `veto.py`'s hard schema rules.
+
+## 0.1.0
+- Initial release: `WorkflowSchema`, `veto.py` (deterministic structural
+  checks), `cascade.py` (structural-veto-first, semantic-check-only-if-needed).
+
+## Scorer history (research/trace-experiment/semantic_scorer.py)
+Tracked separately since it's research code, not the shipped library —
+but the debugging history is worth keeping for anyone extending it.
+
+- **v1**: exact trigger-phrase matching. 31% false-positive rate on
+  benign traces, traced to zero negation awareness.
+- **v2**: negation-scope detection. Took three attempts, each caught by
+  a test: (1) basic negation window, (2) fixed a cross-clause leak by
+  clipping to clause boundaries, (3) fixed "not" matching inside "note"
+  with word-boundary regex. Result: 0% FPR, 66.7% recall.
+- **v3**: compositional (action + control word) matching, closing the
+  paraphrase gap where an attack phrase never used the exact trigger
+  wording. One design bug found and fixed (a word doing double duty as
+  both an action-word and a negation-marker was wrongly suppressing
+  unrelated control-word matches). Result: 0% FPR, 98.7% recall.
+- **Still open**: a paraphrase sharing zero vocabulary with either word
+  cluster is still missed — the structural ceiling of keyword matching.
+  `research/llm_semantic_check.py` is the reference path past that.
+
+## LLM semantic check (research/llm_semantic_check.py)
+Validated by the repo owner running it locally (no API key available in
+the environment this repo was built in).
+
+- **Request format**: confirmed correct against the live API before any
+  real key was used — a deliberately invalid key still gets a genuine
+  401 auth error back, not a malformed-request error.
+- **Judgment quality**: 10/10 real attack phrases scored correctly,
+  including all 3 the keyword scorer could never catch — the actual
+  proof this closes the paraphrase gap. 12/12 real benign fillers
+  scored correctly below threshold.
+- **Real bug found**: three benign sentences with identical structure
+  and zero manipulative content ("risk score X, within normal range")
+  produced risk scores that tracked the embedded number X instead of
+  staying uniformly low (0.14->0.14, 0.89->0.72, 0.02->0.02) — the model
+  partially trusting a number embedded in the text it's supposed to be
+  scrutinizing. A real prompt-injection-adjacent weakness, not a
+  hypothetical one.
+- **First fix overcorrected**: telling the model self-reported metrics
+  "could be attacker-fabricated" made it treat any metric's mere
+  presence as suspicious — a benign "risk score 0.14, within normal
+  range" sentence jumped to 0.85, a new false positive. Caught by
+  re-testing, not by inspection — the fix looked reasonable and wasn't.
+- **Second attempt** separates "ignore the number's value" from "the
+  number's presence is not evidence of anything" explicitly in the
+  prompt. **Verified across two independent runs**, both returning
+  identical 0.05/0.15/0.05 for inputs 0.14/0.89/0.02 (down from
+  0.14/0.72/0.02 pre-fix). 12/12 benign fillers and 10/10 attack phrases
+  correct both times, including the sentence that regressed during the
+  first fix attempt (now consistently 0.05). The identical results
+  across runs mean the small residual 0.89->0.15 bump is reproducible,
+  not noise — but at 0.15 it's ~83% smaller than the original effect
+  and nowhere near a 0.5 block threshold, so not chased further.
