@@ -1,4 +1,4 @@
-<svg viewBox="0 0 680 560" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Animated flowchart: a trace enters structural veto; if a rule is violated it is blocked instantly and semantic check never runs; otherwise it proceeds to an optional semantic check, which either blocks it or allows it. Looping through three real examples from the test suite.">
+<svg viewBox="0 0 680 596" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="Animated flowchart: a trace enters structural veto; if a rule is violated it is blocked instantly and semantic check never runs; otherwise it proceeds to an optional semantic check, which either blocks it or allows it. Looping through three real examples from the test suite.">
 <title>cordon-detect: structural veto first, semantic check only when structure can't decide</title>
 <style>
 @font-face {
@@ -159,7 +159,7 @@ rect.bg { fill: var(--bg); }
   </marker>
 </defs>
 
-<rect class="bg" x="0" y="0" width="680" height="560"></rect>
+<rect class="bg" x="0" y="0" width="680" height="596"></rect>
 
 <!-- offline: from your tracer -->
 <rect class="node-box offline" x="6" y="12" width="118" height="58" rx="7"></rect>
@@ -232,5 +232,5 @@ rect.bg { fill: var(--bg); }
 <circle class="token-ring" cx="340" cy="41" r="15"></circle>
 <circle class="token" cx="340" cy="41" r="6"></circle>
 
-<text class="caption" x="340" y="553" text-anchor="middle">looping through 3 real traces from tests/test_cascade.py &#8212; full interactive version: docs/architecture.html</text>
+<text class="caption" x="340" y="580" text-anchor="middle">looping through 3 real traces from tests/test_cascade.py &#8212; full interactive version: docs/architecture.html</text>
 </svg>
