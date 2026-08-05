@@ -7,6 +7,8 @@ See [`SUMMARY.md`](SUMMARY.md) for the problem/mechanism/validation
 narrative — this README is usage docs; that's the short version of why
 this exists and what the evidence for it actually is.
 
+![cordon-detect detection pipeline](docs/architecture.svg)
+
 ```python
 from cordon import WorkflowSchema, run
 
@@ -30,6 +32,7 @@ cordon/                    the installable library
   evaluate.py               cordon-evaluate: compare strategies on your own data
 tests/                      product tests (pytest tests/)
 examples/quickstart.py      runnable end-to-end example
+docs/architecture.svg       pipeline diagram (embedded above)
 research/
   trace-experiment/         real generated traces, emergent (not preset) results —
                              the evidence behind the fusion-strategy guidance below
@@ -132,6 +135,51 @@ schema = WorkflowSchema(
   this check entirely.
 - `required_agents` — agents that must appear somewhere in a complete
   trace. Catches silent omission, not just wrong order.
+
+## Handling legitimate order variation
+
+If your agents don't always run in the same order — e.g. two
+independent checks that can happen in either sequence depending on
+which upstream service responds first — a schema that only declares one
+order will false-flag the other, legitimate one. This is a real gap if
+you only declare the order you happened to test.
+
+The fix doesn't need new code, just both directions declared, combined
+with `required_agents`:
+
+```python
+schema = WorkflowSchema(
+    allowed_edges={
+        ("intake", "risk_assess"), ("intake", "compliance_check"),
+        ("risk_assess", "compliance_check"), ("compliance_check", "risk_assess"),
+        ("risk_assess", "approval"), ("compliance_check", "approval"),
+    },
+    known_tools={...},
+    required_agents={"intake", "risk_assess", "compliance_check", "approval"},
+)
+```
+
+Both orders now pass. Importantly, this doesn't quietly open a bypass —
+broadening the edges to permit reordering does NOT also permit skipping
+one of the two checks entirely, because `required_agents` independently
+checks that every required agent appeared *somewhere*, regardless of
+which edges were used to get there. Skipping `compliance_check` and
+going straight `risk_assess -> approval` is still caught, even though
+that exact edge is legal (it has to be, to support the other valid
+order) — just caught by a different rule than the edge check. See
+`tests/test_cascade.py`'s reordering tests for this verified directly,
+including the case where a check runs *after* approval already
+happened — present in the trace, but too late to have gated anything —
+which is still caught, via the edge check this time.
+
+**What this doesn't solve, and structural checking fundamentally can't:**
+if the *correct decision* actually depends on execution order — e.g.
+`compliance_check` should apply a different policy when it runs first
+and doesn't yet have `risk_assess`'s output — no amount of schema
+configuration can express that, because it's a data-dependency
+question, not a control-flow question. That's a genuine boundary of
+what this kind of structural veto can check, not a gap to be closed
+with more edges.
 
 ## Trace format
 

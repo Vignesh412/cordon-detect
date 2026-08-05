@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+- Checked a review claim that `WorkflowSchema` is "brittle" for dynamic
+  agent loops with legitimate order variation. Confirmed true for a
+  naively-configured schema (declaring only one order really does
+  false-flag the other legitimate order) — but resolved by existing
+  features, not new code: declaring both edge directions plus
+  `required_agents` together handles reordering without opening a
+  bypass (verified: skipping a check entirely, or running it too late
+  to matter, are both still caught, via `required_agents` and the edge
+  check respectively). Documented in README; the genuine remaining
+  limitation — order-dependent *decisions*, not just order-dependent
+  *validity* — is a data-dependency question no structural schema can
+  express, named explicitly rather than implied to be fixed.
+
 ## 0.4.0
 - Added `cordon/fusion.py` — pluggable fusion strategies (naive average,
   max, noisy-or, confidence cascade) instead of one hardcoded formula.
