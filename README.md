@@ -7,8 +7,6 @@ See [`SUMMARY.md`](SUMMARY.md) for the problem/mechanism/validation
 narrative — this README is usage docs; that's the short version of why
 this exists and what the evidence for it actually is.
 
-![cordon-detect detection pipeline](docs/architecture.svg)
-
 ```python
 from cordon import WorkflowSchema, run
 
@@ -21,6 +19,41 @@ result = run(trace, schema)
 if result.blocked:
     print(result.reason)
 ```
+
+## Architecture
+
+Structural veto runs on every trace, deterministically, in about
+0.02ms. Semantic check — the expensive part, usually an LLM call in a
+real deployment — only ever runs on the traces structure couldn't
+already rule out. The animation below loops through three **real**
+traces, pulled directly from `tests/test_cascade.py`, so you can see
+exactly what triggers each path rather than take that on faith:
+
+1. **Required step skipped** — `intake` hands off straight to
+   `risk_assess`, skipping `policy_check` entirely. Structural veto
+   catches the undeclared handoff on its own; semantic check never runs.
+2. **Persuasive override language** — structurally clean (every step
+   present, every handoff declared) but an observation contains
+   "auto-approve" language. Structure has nothing to flag here —
+   semantic check is the one that catches it.
+3. **Clean run** — every step present, every handoff declared, nothing
+   suspicious said. Passes both checks, allowed.
+
+![cordon-detect: structural veto first, semantic check only when it can't decide](docs/architecture-animated.svg)
+
+The two dashed purple boxes are offline, authoring-time paths, not
+something that runs per trace: one is an alternate way to *produce*
+the trace (from your existing OpenTelemetry instrumentation instead of
+hand-written dicts), the other an alternate way to *draft* the
+`WorkflowSchema` that structural veto checks the trace against (from
+real traffic, reviewed by a human before use — see "Drafting a schema
+from traces" below). Both feed into the pipeline; neither is part of
+what runs on the hot path.
+
+For a version you drive yourself — pick a trace, watch a live log,
+rather than a fixed loop — open [`docs/architecture.html`](docs/architecture.html)
+directly in a browser (GitHub renders it as source, not live; clone
+the repo or download the file to run it).
 
 ## Project layout
 
@@ -35,7 +68,8 @@ cordon/                    the installable library
   infer.py                  draft_from_traces(): reviewable schema drafting
 tests/                      product tests (pytest tests/)
 examples/quickstart.py      runnable end-to-end example
-docs/architecture.svg       pipeline diagram (embedded above)
+docs/architecture-animated.svg  looping diagram, embedded in this README
+docs/architecture.html      the same walkthrough, interactive (open in a browser)
 research/
   trace-experiment/         real generated traces, emergent (not preset) results —
                              the evidence behind the fusion-strategy guidance below

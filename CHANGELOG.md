@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+- Replaced the static `docs/architecture.svg` with an animated,
+  interactive `docs/architecture.html`: three real scenarios from
+  `tests/test_cascade.py` (required step skipped, persuasive override
+  language, clean run) can be run through the actual decision path,
+  with a live log and a token that visibly takes a different route
+  through structural veto / semantic check depending on the trace —
+  rather than a single static picture of the flow. Self-contained
+  (JetBrains Mono + Work Sans inlined as base64 `@font-face`, no
+  external requests), both light and dark themes designed and
+  verified. `docs/architecture.svg` and the root-level stray duplicate
+  were both removed.
+- Added `docs/architecture-animated.svg` and embedded it directly in
+  the README: GitHub strips `<script>`/CSS execution from raw HTML in
+  rendered markdown, so `docs/architecture.html` can only ever be a
+  followed link there, never something that plays inline. Pure
+  CSS-keyframe animation inside an `<img>`-embedded SVG *does* run
+  automatically on GitHub, so this is a second, purpose-built asset —
+  same three scenarios, same visual language, no JS, single looping
+  16s timeline with the token hidden between passes so it doesn't
+  visibly snap position. `docs/architecture.html` is unchanged and
+  stays linked as the version you drive yourself. README gained a new
+  "Architecture" section explaining what the loop shows and naming
+  each of the three scenarios, so the animation isn't just motion
+  without context.
+
 ## 0.6.0
 - **Added `cordon.draft_from_traces()`** — builds a starting
   `WorkflowSchema` from a batch of traces instead of hand-writing
