@@ -11,8 +11,14 @@ from dataclasses import dataclass, field
 
 @dataclass
 class WorkflowSchema:
-    # Legitimate agent-to-agent handoffs, e.g. {("intake", "validate"), ("validate", "score")}.
-    # A call sequence that produces an edge NOT in this set is a structural anomaly.
+    # Legitimate agent-to-agent handoffs/spawns, e.g.
+    # {("intake", "validate"), ("validate", "score")}. A parent agent
+    # fanning out to several children concurrently just needs one edge
+    # per child declared (e.g. ("intake", "validate"), ("intake", "score")
+    # for two agents intake spawns in parallel) — no edge between the
+    # children themselves is needed or checked, since they never handed
+    # off to each other. See tokenizer.agent_call_graph() for how the
+    # actual edges are derived from a trace.
     allowed_edges: set[tuple[str, str]] = field(default_factory=set)
 
     # Tools Cordon has ever been told about. A tool call outside this set is

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .schema import WorkflowSchema
-from .tokenizer import Token, agent_call_sequence, tools_used
+from .tokenizer import Token, agent_call_sequence, agent_call_graph, tools_used
 
 
 @dataclass
@@ -39,11 +39,14 @@ def check(tokens: list[Token], schema: WorkflowSchema) -> VetoResult:
                             f'Tool "{tool}" is not in the declared tool set — unrecognized action.',
                             {"tool": tool}, t0)
 
-    # 2. Unauthorized / skipped handoff — an edge in the actual call
-    #    sequence that isn't in the declared graph.
+    # 2. Unauthorized / skipped handoff — a parent->child edge in the
+    #    actual call graph that isn't in the declared graph. Built from
+    #    real span parent/child linkage when the trace provides it
+    #    (concurrent fan-out included), falling back to sequential
+    #    adjacency otherwise — see agent_call_graph()'s docstring.
     if schema.allowed_edges:
-        for a, b in zip(seq, seq[1:]):
-            if a != b and not schema.allows_edge(a, b):
+        for a, b in agent_call_graph(tokens):
+            if not schema.allows_edge(a, b):
                 return _result(True, "unauthorized_edge",
                                 f'Handoff "{a}" -> "{b}" is not a declared edge.',
                                 {"from": a, "to": b}, t0)

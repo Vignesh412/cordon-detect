@@ -1,6 +1,33 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+- **Structural veto now checks a real parent/child call graph, not a
+  flattened sequence.** `tokenizer.agent_call_graph()` derives
+  `WorkflowSchema.allowed_edges` checks from explicit `id`/`parent_id`
+  linkage on trace steps when present, falling back to "previous step"
+  chaining when they're absent — so every existing trace (none of which
+  set these fields) behaves identically to before. This was a real gap,
+  not a hypothetical one: flattening concurrent agent fan-out into a
+  list invents an edge between siblings that never actually handed off
+  to each other, and either false-flags legitimate parallel execution
+  or forces declaring edges that don't correspond to any real handoff.
+  Two children of one parent now correctly produce two parent→child
+  edges and zero sibling edges. `veto.py`'s edge check was switched
+  from `zip(sequence, sequence[1:])` to this graph. `required_agents`
+  and `known_tools` checks are unaffected (already set-membership, not
+  order-dependent). See README "Concurrent / parallel agents" and
+  `tests/test_graph.py`.
+- **Added `cordon.adapters.otel.from_otel_spans()`** — converts
+  OpenTelemetry GenAI spans into cordon's trace format, carrying real
+  span parent/child linkage through so the graph work above applies to
+  actual production traces, not just hand-written ones. Dependency-free
+  (duck-typed span reading — works with plain dicts or SDK-style
+  objects without installing `opentelemetry`). One documented
+  limitation, not fixed because it isn't a bug: a span that's
+  reasoning/chat rather than a tool call doesn't register as a graph
+  node, matching cordon's existing tool-call-centric model for
+  `required_agents`. See README "Integrations" and
+  `tests/test_otel_adapter.py`.
 - Checked a review claim that `WorkflowSchema` is "brittle" for dynamic
   agent loops with legitimate order variation. Confirmed true for a
   naively-configured schema (declaring only one order really does
@@ -12,7 +39,10 @@
   check respectively). Documented in README; the genuine remaining
   limitation — order-dependent *decisions*, not just order-dependent
   *validity* — is a data-dependency question no structural schema can
-  express, named explicitly rather than implied to be fixed.
+  express, named explicitly rather than implied to be fixed. (Note:
+  the graph work above solves the adjacent *concurrency* case; this
+  reordering fix is still what you want for genuinely sequential but
+  variable-order agents.)
 
 ## 0.4.0
 - Added `cordon/fusion.py` — pluggable fusion strategies (naive average,

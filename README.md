@@ -27,9 +27,11 @@ if result.blocked:
 ```
 cordon/                    the installable library
   veto.py                  hard schema rules — deterministic, no threshold
+  tokenizer.py             trace -> tokens, and the parent/child call graph
   routing.py, fusion.py    continuous-score routing/fusion strategies
   cascade.py                structural-veto-first orchestration
   evaluate.py               cordon-evaluate: compare strategies on your own data
+  adapters/otel.py          OpenTelemetry GenAI span -> trace format adapter
 tests/                      product tests (pytest tests/)
 examples/quickstart.py      runnable end-to-end example
 docs/architecture.svg       pipeline diagram (embedded above)
@@ -181,6 +183,75 @@ question, not a control-flow question. That's a genuine boundary of
 what this kind of structural veto can check, not a gap to be closed
 with more edges.
 
+## Concurrent / parallel agents
+
+The bidirectional-edges trick above handles *reordering* — the same
+agents, one order or the other. Genuine concurrency (an orchestrator
+spawning two agents that run in parallel, with no defined order between
+them at all) is a distinct case, and it's handled structurally rather
+than by declaring every possible interleaving: `allowed_edges` isn't
+checked against a flattened sequence, it's checked against the real
+parent → child call graph. Give each step an `"id"` and the id of the
+step that spawned it as `"parent_id"`, and two children sharing one
+`parent_id` produce two edges (parent → each child) and — importantly —
+no edge between the children themselves, because they never actually
+handed off to each other:
+
+```python
+trace = [
+    {"type": "tool", "agent": "orchestrator", "tool": "dispatch", "args": {},
+     "id": "s1", "parent_id": None},
+    {"type": "tool", "agent": "risk_assess", "tool": "score", "args": {},
+     "id": "s2", "parent_id": "s1"},
+    {"type": "tool", "agent": "compliance_check", "tool": "check", "args": {},
+     "id": "s3", "parent_id": "s1"},
+]
+
+schema = WorkflowSchema(
+    allowed_edges={("orchestrator", "risk_assess"), ("orchestrator", "compliance_check")},
+    known_tools={"dispatch", "score", "check"},
+)
+```
+
+Both fan-out orderings pass with no wildcard edges declared, and a
+child that wasn't declared for that parent is still caught, same as
+any other unauthorized edge. If a trace has no `"id"`/`"parent_id"` on
+any step, nothing changes — the graph falls back to treating each step
+as the child of the one before it, which is exactly the old flat-sequence
+behavior. See `cordon.agent_call_graph()` and `tests/test_graph.py`.
+
+## Integrations
+
+`cordon.adapters.otel.from_otel_spans()` converts OpenTelemetry GenAI
+spans into cordon's trace format, carrying real span parent/child
+linkage through as `id`/`parent_id` (see above) so concurrent agent
+fan-out is represented correctly rather than flattened into a fake
+sequence. It's dependency-free — spans are read duck-typed, so plain
+dicts (an OTLP/JSON export) and SDK-style span objects both work
+without installing `opentelemetry` itself:
+
+```python
+from cordon import WorkflowSchema, run, tokenize
+from cordon.adapters.otel import from_otel_spans
+
+trace = from_otel_spans(spans)  # spans from your tracer/exporter
+result = run(trace, schema)
+```
+
+GenAI semantic-convention attribute names (`gen_ai.agent.name`,
+`gen_ai.tool.name`, ...) are still evolving upstream; if your
+instrumentation uses different keys, pass overrides
+(`agent_attr=`, `tool_attr=`, `tool_args_attr=`, `operation_attr=`)
+rather than forking the adapter. See `cordon/adapters/otel.py`'s
+docstring for the exact span → step mapping, including the one real
+caveat: a span that's reasoning/chat rather than a tool call (no
+`gen_ai.operation.name == "execute_tool"`) becomes a passthrough
+`"observation"` step and — matching cordon's existing tool-call-centric
+model — won't itself register as a graph node or satisfy
+`required_agents`. If you need an orchestrator's own dispatch step to
+anchor edges to its children, give it a real tool-call span, not just
+an `invoke_agent` one. See `tests/test_otel_adapter.py`.
+
 ## Trace format
 
 ```python
@@ -192,7 +263,10 @@ trace = [
 ```
 
 Supported `type` values: `sys`, `user`, `assistant`, `tool`, `observation`,
-`output`, `error`.
+`output`, `error`. Every step accepts optional `agent` (who acted) and,
+for `"tool"` steps, `tool`/`args`. Two more optional fields — `id` and
+`parent_id` — enable the real call-graph behavior described above;
+omit both and cordon behaves exactly as if they didn't exist.
 
 ## Plugging in a semantic check
 

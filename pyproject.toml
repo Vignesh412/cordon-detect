@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cordon-detect"
-version = "0.4.0"
+version = "0.5.0"
 description = "Structural anomaly detection and fusion routing for AI agent execution traces"
 readme = "README.md"
 license = {text = "Apache-2.0"}

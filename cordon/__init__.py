@@ -1,5 +1,5 @@
 from .schema import WorkflowSchema
-from .tokenizer import tokenize, agent_call_sequence, tools_used, Token
+from .tokenizer import tokenize, agent_call_sequence, agent_call_graph, tools_used, Token
 from .veto import check as structural_check, VetoResult
 from .cascade import run, CascadeResult, SemanticResult
 from .routing import confidence_route, batch_cascade_scores, RoutedScore
@@ -24,6 +24,7 @@ __all__ = [
     "WorkflowSchema",
     "tokenize",
     "agent_call_sequence",
+    "agent_call_graph",
     "tools_used",
     "Token",
     "structural_check",
@@ -48,4 +49,4 @@ __all__ = [
     "GroupEvaluation",
 ]
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
