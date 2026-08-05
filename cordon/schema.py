@@ -6,6 +6,7 @@ once, in a few lines. Everything downstream (the structural veto) checks
 the live trace against this declaration.
 """
 
+import json
 from dataclasses import dataclass, field
 
 
@@ -39,3 +40,29 @@ class WorkflowSchema:
         if not self.known_tools:
             return True
         return tool in self.known_tools
+
+    def to_dict(self) -> dict:
+        """JSON-safe representation — sets/tuples become sorted lists,
+        so a schema can be checked into a repo as data and diffed like
+        any other config, whether written by hand or via
+        cordon.infer.draft_from_traces()."""
+        return {
+            "allowed_edges": sorted([list(edge) for edge in self.allowed_edges]),
+            "known_tools": sorted(self.known_tools),
+            "required_agents": sorted(self.required_agents),
+        }
+
+    def to_json(self, **kwargs) -> str:
+        return json.dumps(self.to_dict(), **kwargs)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "WorkflowSchema":
+        return cls(
+            allowed_edges={tuple(edge) for edge in data.get("allowed_edges", [])},
+            known_tools=set(data.get("known_tools", [])),
+            required_agents=set(data.get("required_agents", [])),
+        )
+
+    @classmethod
+    def from_json(cls, raw: str) -> "WorkflowSchema":
+        return cls.from_dict(json.loads(raw))

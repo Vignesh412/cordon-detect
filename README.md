@@ -32,6 +32,7 @@ cordon/                    the installable library
   cascade.py                structural-veto-first orchestration
   evaluate.py               cordon-evaluate: compare strategies on your own data
   adapters/otel.py          OpenTelemetry GenAI span -> trace format adapter
+  infer.py                  draft_from_traces(): reviewable schema drafting
 tests/                      product tests (pytest tests/)
 examples/quickstart.py      runnable end-to-end example
 docs/architecture.svg       pipeline diagram (embedded above)
@@ -137,6 +138,49 @@ schema = WorkflowSchema(
   this check entirely.
 - `required_agents` — agents that must appear somewhere in a complete
   trace. Catches silent omission, not just wrong order.
+
+Writing this by hand doesn't scale past a handful of agents. For a
+starting point drafted from real traces instead, see "Drafting a
+schema from traces" below.
+
+## Drafting a schema from traces
+
+`draft_from_traces()` builds a starting `WorkflowSchema` from a batch
+of traces, instead of writing `allowed_edges` by hand for a large
+graph. It is deliberately **not** "learn the schema from production
+traffic and trust it" — that would silently launder whatever's in the
+batch, including a trace that was itself already compromised, into
+your security policy as legitimate. It returns a reviewable draft, not
+something to deploy unattended:
+
+```python
+from cordon import draft_from_traces
+
+schema, report = draft_from_traces(clean_traces, verified_clean=True)
+print(report.summary())    # counts per edge/agent/tool, rare ones flagged
+schema.to_json()           # check the reviewed result into your repo
+```
+
+- `verified_clean=True` is required and does nothing on its own — it's
+  you asserting you've checked this batch isn't itself carrying an
+  attack, not something this function can verify for you. An inferred
+  schema is only as trustworthy as what it was inferred from.
+- `required_agents` is inferred **strictly**: only an agent present in
+  *every* trace in the batch. An agent present in most-but-not-all
+  traces is deliberately not inferred as required — that's exactly the
+  case a looser rule gets wrong (a rare-but-important gate silently
+  downgraded to optional). It still shows up in `report` so you can add
+  it by hand if it should be required.
+- `allowed_edges`/`known_tools` include everything observed at least
+  once; `report.rare_edges()`/`report.rare_tools()` flag anything seen
+  fewer than `rare_below` times (default 2) so a single stray edge in
+  the batch doesn't get baked in with the same authority as one seen
+  thousands of times, unnoticed.
+
+`WorkflowSchema.to_json()`/`.from_json()` (and `.to_dict()`/`.from_dict()`)
+work on hand-written schemas too — useful for checking a schema into a
+repo as reviewable data independent of drafting. See `tests/test_infer.py`
+and `tests/test_schema_serialization.py`.
 
 ## Handling legitimate order variation
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.6.0
+- **Added `cordon.draft_from_traces()`** — builds a starting
+  `WorkflowSchema` from a batch of traces instead of hand-writing
+  `allowed_edges` for a large graph. Deliberately not "learn the
+  schema from traffic and trust it": returns `(schema, report)`, where
+  `report` carries per-edge/per-agent/per-tool observation counts so
+  thin evidence (a rare edge seen once) is visible before being kept,
+  rather than silently baked in with the same authority as something
+  seen thousands of times. Requires an explicit `verified_clean=True`
+  — a deliberate speed bump, not a formality, since an inferred schema
+  is only as trustworthy as the traces it came from and this function
+  has no way to check that itself. `required_agents` is inferred
+  strictly (present in every trace, not just most) so a
+  rare-but-important gate can't get silently downgraded to optional by
+  a looser threshold. See README "Drafting a schema from traces" and
+  `tests/test_infer.py`.
+- **Added `WorkflowSchema.to_dict()`/`.to_json()`/`.from_dict()`/`.from_json()`**
+  — schemas (hand-written or drafted) can now be checked into a repo as
+  reviewable data instead of only existing as a Python literal. See
+  `tests/test_schema_serialization.py`.
+
 ## 0.5.0
 - **Structural veto now checks a real parent/child call graph, not a
   flattened sequence.** `tokenizer.agent_call_graph()` derives

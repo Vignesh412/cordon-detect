@@ -19,6 +19,7 @@ from .evaluate import (
     print_report,
     GroupEvaluation,
 )
+from .infer import draft_from_traces, SchemaDraftReport
 
 __all__ = [
     "WorkflowSchema",
@@ -47,6 +48,8 @@ __all__ = [
     "format_report",
     "print_report",
     "GroupEvaluation",
+    "draft_from_traces",
+    "SchemaDraftReport",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
