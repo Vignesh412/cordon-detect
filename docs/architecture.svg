@@ -1,11 +1,14 @@
-<svg viewBox="0 0 640 795" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg viewBox="0 0 640 818" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
       <path d="M0,0 L8,4 L0,8 Z" fill="#0B1220"/>
     </marker>
+    <marker id="arrow-alt" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5B3FA6"/>
+    </marker>
   </defs>
 
-  <rect x="0" y="0" width="640" height="795" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="640" height="818" fill="#FFFFFF"/>
 
   <!-- Title -->
   <text x="320" y="30" text-anchor="middle" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace" font-size="16" font-weight="700" fill="#0B1220">cordon-detect: detection pipeline</text>
@@ -15,13 +18,27 @@
   <rect x="170" y="70" width="300" height="40" rx="8" fill="#F7F9FC" stroke="#D7DEE9" stroke-width="1.5"/>
   <text x="320" y="95" text-anchor="middle" font-family="ui-monospace, monospace" font-size="13" fill="#0B1220">agent execution trace</text>
 
+  <!-- Alt source: OTel spans -> adapters.otel -> trace (offline/alternate input, not a runtime branch) -->
+  <rect x="4" y="70" width="112" height="40" rx="6" fill="#F3F1FB" stroke="#5B3FA6" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="60" y="86" text-anchor="middle" font-size="9" fill="#0B1220">OTel spans</text>
+  <text x="60" y="98" text-anchor="middle" font-size="8" fill="#5B6B85">adapters.otel</text>
+  <line x1="116" y1="90" x2="167" y2="90" stroke="#5B3FA6" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow-alt)"/>
+
   <line x1="320" y1="110" x2="320" y2="138" stroke="#0B1220" stroke-width="1.5" marker-end="url(#arrow)"/>
 
   <!-- Box 2: structural veto -->
   <rect x="120" y="140" width="400" height="75" rx="8" fill="#E4F5F3" stroke="#0E7C72" stroke-width="2"/>
   <text x="320" y="168" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" font-weight="700" fill="#0E7C72">STRUCTURAL VETO</text>
-  <text x="320" y="187" text-anchor="middle" font-size="11" fill="#0B1220">veto.py — declared schema rules</text>
+  <text x="320" y="187" text-anchor="middle" font-size="11" fill="#0B1220">veto.py — declared schema, parent/child call graph</text>
   <text x="320" y="203" text-anchor="middle" font-size="11" fill="#5B6B85">deterministic · ~0.02ms · runs on every trace</text>
+
+  <!-- Alt input: draft_from_traces() -> reviewed WorkflowSchema (offline authoring aid, not runtime) -->
+  <rect x="4" y="140" width="112" height="75" rx="6" fill="#F3F1FB" stroke="#5B3FA6" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="60" y="160" text-anchor="middle" font-size="9" font-weight="700" fill="#5B3FA6">SCHEMA DRAFT</text>
+  <text x="60" y="174" text-anchor="middle" font-size="8" fill="#0B1220">draft_from_traces()</text>
+  <text x="60" y="187" text-anchor="middle" font-size="7.5" fill="#5B6B85">offline · reviewed</text>
+  <text x="60" y="198" text-anchor="middle" font-size="7.5" fill="#5B6B85">before use</text>
+  <line x1="116" y1="177" x2="119" y2="177" stroke="#5B3FA6" stroke-width="1.5" stroke-dasharray="3 2" marker-end="url(#arrow-alt)"/>
 
   <line x1="320" y1="215" x2="320" y2="243" stroke="#0B1220" stroke-width="1.5" marker-end="url(#arrow)"/>
 
@@ -83,6 +100,9 @@
   <rect x="60" y="720" width="12" height="12" rx="2" fill="#E7F6EC" stroke="#1D7A45" stroke-width="1.5"/>
   <text x="80" y="730" font-size="11" fill="#0B1220">allowed outcome</text>
 
-  <text x="320" y="756" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#5B6B85">measured (research/trace-experiment): ~50% of traffic resolved by</text>
-  <text x="320" y="770" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#5B6B85">structural veto alone — semantic check never invoked</text>
+  <rect x="60" y="742" width="12" height="12" rx="2" fill="#F3F1FB" stroke="#5B3FA6" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="80" y="752" font-size="11" fill="#0B1220">offline / authoring-time — alternate trace source or schema drafting, not the runtime hot path</text>
+
+  <text x="320" y="778" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#5B6B85">measured (research/trace-experiment): ~50% of traffic resolved by</text>
+  <text x="320" y="792" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#5B6B85">structural veto alone — semantic check never invoked</text>
 </svg>

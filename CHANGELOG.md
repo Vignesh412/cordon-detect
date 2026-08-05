@@ -20,6 +20,12 @@
   — schemas (hand-written or drafted) can now be checked into a repo as
   reviewable data instead of only existing as a Python literal. See
   `tests/test_schema_serialization.py`.
+- `docs/architecture.svg`: added the two new offline/authoring-time
+  paths introduced this release (OTel spans as an alternate trace
+  source, `draft_from_traces()` feeding a reviewed `WorkflowSchema`) as
+  dashed side-boxes. The runtime decision path itself (trace →
+  structural veto → semantic check → allowed/blocked) is unchanged by
+  this release and wasn't touched.
 
 ## 0.5.0
 - **Structural veto now checks a real parent/child call graph, not a
