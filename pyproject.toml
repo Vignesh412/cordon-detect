@@ -19,8 +19,13 @@ classifiers = [
     "Topic :: Security",
 ]
 
-[tool.setuptools]
-packages = ["cordon"]
+[project.urls]
+Homepage = "https://github.com/Vignesh412/cordon-detect"
+Repository = "https://github.com/Vignesh412/cordon-detect"
+Issues = "https://github.com/Vignesh412/cordon-detect/issues"
+
+[tool.setuptools.packages.find]
+include = ["cordon*"]
 
 [project.scripts]
 cordon-evaluate = "cordon.evaluate:main"
