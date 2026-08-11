@@ -134,10 +134,11 @@ On purpose, to keep this small and dependency-free:
 ## Install
 
 ```
-pip install -e .
+pip install cordon-detect
 ```
 
-(not yet published to PyPI — clone and install locally)
+To work on the library itself, clone the repository and use
+`pip install -e .` instead.
 
 ## Quickstart
 
