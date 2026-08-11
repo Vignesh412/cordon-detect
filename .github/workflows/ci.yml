@@ -17,8 +17,8 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -29,8 +29,8 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -44,4 +44,3 @@ jobs:
           /tmp/cordon-wheel-test/bin/python -m pip install dist/*.whl
           /tmp/cordon-wheel-test/bin/python -c "from cordon.adapters.otel import from_otel_spans; assert callable(from_otel_spans)"
           /tmp/cordon-wheel-test/bin/cordon-evaluate --help
-
