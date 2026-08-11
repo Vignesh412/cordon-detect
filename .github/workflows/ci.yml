@@ -44,3 +44,19 @@ jobs:
           /tmp/cordon-wheel-test/bin/python -m pip install dist/*.whl
           /tmp/cordon-wheel-test/bin/python -c "from cordon.adapters.otel import from_otel_spans; assert callable(from_otel_spans)"
           /tmp/cordon-wheel-test/bin/cordon-evaluate --help
+
+  langgraph-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e . -r examples/langgraph_demo/requirements.txt
+      - name: Verify all demonstration outcomes
+        run: |
+          python examples/langgraph_demo/demo.py clean | grep -q "Decision:       ALLOWED"
+          python examples/langgraph_demo/demo.py structural | grep -q "Cordon stage:   structural"
+          python examples/langgraph_demo/demo.py semantic | grep -q "Cordon stage:   semantic"

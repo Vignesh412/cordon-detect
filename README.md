@@ -151,6 +151,18 @@ handoff (caught structurally, semantic check never runs), and one with
 clean structure but manipulative text in a tool observation (caught by
 the semantic hook).
 
+## LangGraph demonstration
+
+The [`examples/langgraph_demo`](examples/langgraph_demo/) example runs a
+purchase-approval graph and places Cordon before the simulated payment step.
+It demonstrates a clean run, a structural bypass, and a semantic override
+attack without requiring a model API key:
+
+```
+python -m pip install cordon-detect -r examples/langgraph_demo/requirements.txt
+python examples/langgraph_demo/demo.py
+```
+
 ## Declaring a schema
 
 ```python
